@@ -53,7 +53,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Key: %s\n", string(key))
+	// fmt.Printf("Key: %s\n", string(key))
 
 	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(key)
 	if err != nil {
