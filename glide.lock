@@ -1,0 +1,18 @@
+hash: 7ee8637cc4a82b872fbecd793531757b4afb0d58b80b337074c36220d0e10250
+updated: 2017-12-11T15:40:44.821593034-08:00
+imports:
+- name: github.com/almighty/almighty-core
+  version: 0bb47c1ebfd71c023ec3795696520bf6c6a06226
+  subpackages:
+  - rest
+- name: github.com/dgrijalva/jwt-go
+  version: dbeaa9332f19a944acb5736b4456cfcc02140e29
+- name: github.com/fabric8-services/fabric8-wit
+  version: 0bb47c1ebfd71c023ec3795696520bf6c6a06226
+  subpackages:
+  - errors
+- name: github.com/pkg/errors
+  version: 645ef00459ed84a119197bfb8d8205042c6df63d
+- name: github.com/satori/go.uuid
+  version: 879c5887cd475cd7864858769793b2ceb0d44feb
+testImports: []

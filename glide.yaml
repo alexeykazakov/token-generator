@@ -1,0 +1,6 @@
+package: github.com/alexeykazakov/token-generator
+import:
+- package: github.com/dgrijalva/jwt-go
+  version: v3.1.0
+- package: github.com/satori/go.uuid
+  version: v1.1.0
