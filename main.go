@@ -41,11 +41,13 @@ type TokenResult struct {
 func main() {
 	keyLoc := flag.String("key", "foo", "private key location")
 	userIDLoc := flag.String("users", "foo", "user UUIDs location")
+	sessionState := flag.String("session", uuid.NewV4().String(), "session state")
 	saveTo := flag.String("saveTo", "foo", "File to save the result to")
 	flag.Parse()
 
 	fmt.Printf("Key location: %s\n", *keyLoc)
 	fmt.Printf("User UUIDs location: %s\n", *userIDLoc)
+	fmt.Printf("Session State: %s\n\n", *sessionState)
 	fmt.Printf("File to save the result to: %s\n\n", *saveTo)
 
 	key, err := ioutil.ReadFile(*keyLoc)
@@ -76,7 +78,7 @@ func main() {
 			}
 			indx++
 			fmt.Printf("User %v: %s, %s, %s\n", indx, user.Data.Attributes.Username, user.Data.Attributes.Email, user.Data.Attributes.FullName)
-			token, err := generateToken(privateKey, user, userID)
+			token, err := generateToken(privateKey, user, userID, *sessionState)
 			if err != nil {
 				panic(err)
 			}
@@ -97,7 +99,7 @@ type Token struct {
 	Data Data `json:"data"`
 }
 
-func generateToken(key *rsa.PrivateKey, user User, userID string) (string, error) {
+func generateToken(key *rsa.PrivateKey, user User, userID, sessionState string) (string, error) {
 	token := jwt.New(jwt.SigningMethodRS256)
 	token.Header["kid"] = "0lL0vXs9YRVqZMowyw8uNLR_yr0iFaozdQk9rzq2OVU"
 
@@ -113,7 +115,7 @@ func generateToken(key *rsa.PrivateKey, user User, userID string) (string, error
 	token.Claims.(jwt.MapClaims)["typ"] = "Bearer"
 	token.Claims.(jwt.MapClaims)["azp"] = "fabric8-online-platform"
 	token.Claims.(jwt.MapClaims)["auth_time"] = nowTime
-	token.Claims.(jwt.MapClaims)["session_state"] = uuid.NewV4().String()
+	token.Claims.(jwt.MapClaims)["session_state"] = sessionState
 	token.Claims.(jwt.MapClaims)["acr"] = "1"
 	token.Claims.(jwt.MapClaims)["approved"] = "true"
 	token.Claims.(jwt.MapClaims)["name"] = user.Data.Attributes.FullName
