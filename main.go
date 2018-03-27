@@ -104,9 +104,9 @@ func generateToken(key *rsa.PrivateKey, user User, userID, sessionState string) 
 	token.Header["kid"] = "0lL0vXs9YRVqZMowyw8uNLR_yr0iFaozdQk9rzq2OVU"
 
 	nowTime := time.Now().Unix()
-	in24Hours := nowTime + 24*60*60
+	in3Days := nowTime + 3*24*60*60
 	token.Claims.(jwt.MapClaims)["jti"] = uuid.NewV4().String()
-	token.Claims.(jwt.MapClaims)["exp"] = in24Hours
+	token.Claims.(jwt.MapClaims)["exp"] = in3Days
 	token.Claims.(jwt.MapClaims)["nbf"] = 0
 	token.Claims.(jwt.MapClaims)["iat"] = nowTime
 	token.Claims.(jwt.MapClaims)["iss"] = "https://sso.openshift.io/auth/realms/fabric8"
