@@ -1,6 +1,6 @@
 # token-generator
 
 ----
-$ go install token-generator
-$ token-generator -key private_pem.key -users uuids.txt -session ${session_state} -saveTo result.json
+$ go install
+$ token-generator -key private_pem.key -users uuids.txt -session ${session_state} -saveTo result.json -env preview
 ----

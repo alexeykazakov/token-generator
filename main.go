@@ -43,12 +43,14 @@ func main() {
 	userIDLoc := flag.String("users", "foo", "user UUIDs location")
 	sessionState := flag.String("session", uuid.NewV4().String(), "session state")
 	saveTo := flag.String("saveTo", "foo", "File to save the result to")
+	env := flag.String("env", "prod", "prod or prod-preview")
 	flag.Parse()
 
 	fmt.Printf("Key location: %s\n", *keyLoc)
 	fmt.Printf("User UUIDs location: %s\n", *userIDLoc)
 	fmt.Printf("Session State: %s\n\n", *sessionState)
 	fmt.Printf("File to save the result to: %s\n\n", *saveTo)
+	fmt.Printf("Environment: %s\n\n", *env)
 
 	key, err := ioutil.ReadFile(*keyLoc)
 	if err != nil {
@@ -72,13 +74,13 @@ func main() {
 	for _, id := range ids {
 		if len(id) > 2 {
 			userID := strings.TrimSpace(id)
-			user, err := loadUser(userID)
+			user, err := loadUser(userID, *env)
 			if err != nil {
 				panic(err)
 			}
 			indx++
 			fmt.Printf("User %v: %s, %s, %s\n", indx, user.Data.Attributes.Username, user.Data.Attributes.Email, user.Data.Attributes.FullName)
-			token, err := generateToken(privateKey, user, userID, *sessionState)
+			token, err := generateToken(privateKey, user, userID, *sessionState, *env)
 			if err != nil {
 				panic(err)
 			}
@@ -99,9 +101,15 @@ type Token struct {
 	Data Data `json:"data"`
 }
 
-func generateToken(key *rsa.PrivateKey, user User, userID, sessionState string) (string, error) {
+func generateToken(key *rsa.PrivateKey, user User, userID, sessionState, env string) (string, error) {
 	token := jwt.New(jwt.SigningMethodRS256)
-	token.Header["kid"] = "0lL0vXs9YRVqZMowyw8uNLR_yr0iFaozdQk9rzq2OVU"
+	if env == "prod" {
+		token.Header["kid"] = "0lL0vXs9YRVqZMowyw8uNLR_yr0iFaozdQk9rzq2OVU"
+		token.Claims.(jwt.MapClaims)["iss"] = "https://sso.openshift.io/auth/realms/fabric8"
+	} else {
+		token.Header["kid"] = "zD-57oBFIMUZsAWqUnIsVu_x71VIjd1irGkGUOiTsL8"
+		token.Claims.(jwt.MapClaims)["iss"] = "https://sso.prod-preview.openshift.io/auth/realms/fabric8"
+	}
 
 	nowTime := time.Now().Unix()
 	in3Days := nowTime + 3*24*60*60
@@ -109,7 +117,6 @@ func generateToken(key *rsa.PrivateKey, user User, userID, sessionState string) 
 	token.Claims.(jwt.MapClaims)["exp"] = in3Days
 	token.Claims.(jwt.MapClaims)["nbf"] = 0
 	token.Claims.(jwt.MapClaims)["iat"] = nowTime
-	token.Claims.(jwt.MapClaims)["iss"] = "https://sso.openshift.io/auth/realms/fabric8"
 	token.Claims.(jwt.MapClaims)["aud"] = "fabric8-online-platform"
 	token.Claims.(jwt.MapClaims)["sub"] = userID
 	token.Claims.(jwt.MapClaims)["typ"] = "Bearer"
@@ -126,12 +133,13 @@ func generateToken(key *rsa.PrivateKey, user User, userID, sessionState string) 
 	token.Claims.(jwt.MapClaims)["email"] = user.Data.Attributes.Email
 
 	token.Claims.(jwt.MapClaims)["allowed-origins"] = []string{
-		"http://auth.openshift.io",
-		"http://api.openshift.io",
-		"https://openshift.io",
-		"http://localhost:3000",
 		"https://auth.openshift.io",
-		"https://api.openshift.io"}
+		"https://auth.prod-preview.openshift.io",
+		"https://api.openshift.io",
+		"https://api.prod-preview.openshift.io",
+		"https://openshift.io",
+		"https://prod-preview.openshift.io",
+		"http://localhost:3000"}
 
 	realmAccess := make(map[string]interface{})
 	realmAccess["roles"] = []string{"uma_authorization"}
@@ -155,9 +163,15 @@ func generateToken(key *rsa.PrivateKey, user User, userID, sessionState string) 
 	return tokenStr, nil
 }
 
-func loadUser(id string) (User, error) {
+func loadUser(id, env string) (User, error) {
 	var user User
-	req, err := http.NewRequest("GET", "https://auth.openshift.io/api/users/"+id, nil)
+	var url string
+	if env == "prod" {
+		url = "https://auth.openshift.io/api/users/"
+	} else {
+		url = "https://auth.prod-preview.openshift.io/api/users/"
+	}
+	req, err := http.NewRequest("GET", url+id, nil)
 	if err != nil {
 		return user, err
 	}
